@@ -1,22 +1,26 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../src/supabase'; // Ruta exacta a tu archivo en src
+import { supabase } from '../../src/supabase';
 
 export default function TablaPosiciones() {
   const [tabla, setTabla] = useState<any[]>([]);
 
   useEffect(() => {
     const cargarDatos = async () => {
-      // Intentamos traer los datos de la vista que creamos antes
-      const { data, error } = await supabase.from('tabla_posiciones').select('*');
-      if (error) console.error("Error cargando tabla:", error);
-      else setTabla(data);
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase.from('tabla_posiciones').select('*');
+        if (error) console.error("Error:", error);
+        else setTabla(data || []);
+      } catch (e) {
+        console.error("Error de conexión:", e);
+      }
     };
     cargarDatos();
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
       <div className="max-w-4xl mx-auto bg-white p-6 rounded-2xl shadow-xl">
         <h1 className="text-3xl font-bold text-center text-blue-800 mb-8">🏆 Tabla de Posiciones</h1>
         <div className="overflow-x-auto">
@@ -30,17 +34,24 @@ export default function TablaPosiciones() {
               </tr>
             </thead>
             <tbody>
-              {tabla?.map((equipo: any) => (
-                <tr key={equipo.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3 font-semibold text-gray-700">{equipo.nombre}</td>
-                  <td className="p-3 text-center">{equipo.pj || 0}</td>
-                  <td className="p-3 text-center">{equipo.pg || 0}</td>
-                  <td className="p-3 text-center font-bold text-blue-600">{equipo.puntos || 0}</td>
+              {tabla.map((fila: any, i: number) => (
+                <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
+                  {/* Aquí está el truco: intenta buscar 'nombre' o 'equipo' */}
+                  <td className="p-3 font-semibold text-gray-700">
+                    {fila.nombre || fila.equipo || 'Sin nombre'}
+                  </td>
+                  <td className="p-3 text-center text-gray-600">{fila.pj || 0}</td>
+                  <td className="p-3 text-center text-gray-600">{fila.pg || 0}</td>
+                  <td className="p-3 text-center font-bold text-blue-600 text-lg">
+                    {fila.puntos || fila.pts || 0}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {tabla.length === 0 && <p className="text-center mt-4 text-gray-400">No hay datos registrados todavía.</p>}
+          {tabla.length === 0 && (
+            <p className="text-center mt-6 text-gray-400 italic">Cargando datos del torneo...</p>
+          )}
         </div>
       </div>
     </div>
