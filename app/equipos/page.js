@@ -8,7 +8,7 @@ export default function AgregarEquipo() {
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  const guardarEquipo = async (e: React.FormEvent) => {
+  const guardarEquipo = async (e) => {
     e.preventDefault();
     if (!nombre) return;
 
@@ -16,8 +16,6 @@ export default function AgregarEquipo() {
     setMensaje('');
 
     try {
-      // Insertamos el nuevo equipo en la tabla 'equipos'
-      // puntos_totales se pone en 0 por defecto
       const { error } = await supabase
         .from('equipos')
         .insert([{ nombre: nombre, puntos_totales: 0 }]);
@@ -25,8 +23,8 @@ export default function AgregarEquipo() {
       if (error) throw error;
 
       setMensaje('✅ ¡Equipo agregado con éxito!');
-      setNombre(''); // Limpiar el campo
-    } catch (error: any) {
+      setNombre('');
+    } catch (error) {
       setMensaje('❌ Error: ' + error.message);
     } finally {
       setCargando(false);
@@ -46,7 +44,7 @@ export default function AgregarEquipo() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               placeholder="Ej: Los Galácticos FC"
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-3 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
