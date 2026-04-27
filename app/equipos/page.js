@@ -1,32 +1,78 @@
+'use client';
+import { useState } from 'react';
+import { supabase } from '../../src/supabase';
 import Link from 'next/link';
 
-export default function Home() {
+export default function AgregarEquipo() {
+  const [nombre, setNombre] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [cargando, setCargando] = useState(false);
+
+  const guardarEquipo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nombre) return;
+
+    setCargando(true);
+    setMensaje('');
+
+    try {
+      // Insertamos el nuevo equipo en la tabla 'equipos'
+      // puntos_totales se pone en 0 por defecto
+      const { error } = await supabase
+        .from('equipos')
+        .insert([{ nombre: nombre, puntos_totales: 0 }]);
+
+      if (error) throw error;
+
+      setMensaje('✅ ¡Equipo agregado con éxito!');
+      setNombre(''); // Limpiar el campo
+    } catch (error: any) {
+      setMensaje('❌ Error: ' + error.message);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
-      <div className="max-w-5xl w-full flex flex-col items-center text-center">
-        <h1 className="text-6xl font-bold text-blue-600 mb-4">⚽ DeporStar</h1>
-        <p className="text-xl text-gray-600 mb-12">Gestión profesional de torneos de fútbol</p>
+    <div className="min-h-screen bg-gray-100 p-8 flex flex-col items-center">
+      <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl">
+        <h1 className="text-2xl font-bold text-center text-blue-800 mb-6">Registrar Nuevo Equipo</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
-          {/* Botón Equipos */}
-          <Link href="/equipos" className="p-6 bg-white rounded-xl shadow-md border hover:border-blue-500 transition-all group">
-            <h2 className="text-2xl font-bold mb-2 group-hover:text-blue-600">Equipos →</h2>
-            <p className="text-gray-500 text-sm">Inscribe y gestiona los equipos del torneo.</p>
-          </Link>
+        <form onSubmit={guardarEquipo} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Equipo</label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Ej: Los Galácticos FC"
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={cargando}
+            className={`w-full p-3 text-white font-bold rounded-lg transition-colors ${
+              cargando ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {cargando ? 'Guardando...' : 'Agregar Equipo'}
+          </button>
+        </form>
 
-          {/* Botón Tabla (EL NUEVO) */}
-          <Link href="/tabla" className="p-6 bg-blue-600 rounded-xl shadow-md border border-blue-700 hover:bg-blue-700 transition-all text-white">
-            <h2 className="text-2xl font-bold mb-2 text-white">🏆 Tabla →</h2>
-            <p className="text-blue-100 text-sm">Mira las posiciones y estadísticas en vivo.</p>
-          </Link>
+        {mensaje && (
+          <p className={`mt-4 text-center font-medium ${mensaje.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
+            {mensaje}
+          </p>
+        )}
 
-          {/* Botón Partidos */}
-          <Link href="/partidos" className="p-6 bg-white rounded-xl shadow-md border hover:border-blue-500 transition-all group">
-            <h2 className="text-2xl font-bold mb-2 group-hover:text-blue-600">Partidos →</h2>
-            <p className="text-gray-500 text-sm">Registra resultados y marcadores.</p>
-          </Link>
+        <div className="mt-8 flex justify-between">
+          <Link href="/" className="text-blue-500 hover:underline">← Inicio</Link>
+          <Link href="/tabla" className="text-blue-500 hover:underline">Ver Tabla →</Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
