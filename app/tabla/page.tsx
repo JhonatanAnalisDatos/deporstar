@@ -9,13 +9,13 @@ export default function TablaPosiciones() {
     const cargarDatos = async () => {
       if (!supabase) return;
       try {
-        // Cambiamos a la tabla 'equipos' que es donde veo tus datos en la imagen
+        // Consultamos la tabla 'equipos' que es la que tienes con datos
         const { data, error } = await supabase
           .from('equipos') 
           .select('nombre, puntos_totales')
           .order('puntos_totales', { ascending: false });
 
-        if (error) console.error("Error:", error.message);
+        if (error) console.error("Error de Supabase:", error.message);
         else setTabla(data || []);
       } catch (e) {
         console.error("Error de conexión:", e);
@@ -39,9 +39,7 @@ export default function TablaPosiciones() {
             <tbody>
               {tabla.map((fila: any, i: number) => (
                 <tr key={i} className="border-b hover:bg-gray-50">
-                  <td className="p-4 font-semibold text-gray-700">
-                    {fila.nombre}
-                  </td>
+                  <td className="p-4 font-semibold text-gray-700">{fila.nombre}</td>
                   <td className="p-4 text-center font-bold text-blue-600 text-xl">
                     {fila.puntos_totales || 0}
                   </td>
@@ -50,11 +48,8 @@ export default function TablaPosiciones() {
             </tbody>
           </table>
           {tabla.length === 0 && (
-            <p className="text-center mt-6 text-gray-400 italic">Cargando datos de Supabase...</p>
+            <p className="text-center mt-6 text-gray-400 italic">No hay datos en la tabla 'equipos'...</p>
           )}
-        </div>
-        <div className="mt-8 text-center">
-            <a href="/" className="text-blue-500 hover:underline">← Volver al Inicio</a>
         </div>
       </div>
     </div>
