@@ -1,5 +1,4 @@
-import { supabase } from '@/lib/supabase';
-
+import { supabase } from '../../src/supabase';
 export default async function TablaPosiciones() {
   // Traemos los datos de la "Vista" que creamos en Supabase
   const { data: tabla, error } = await supabase
