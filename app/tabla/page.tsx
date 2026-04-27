@@ -9,8 +9,13 @@ export default function TablaPosiciones() {
     const cargarDatos = async () => {
       if (!supabase) return;
       try {
-        const { data, error } = await supabase.from('tabla_posiciones').select('*');
-        if (error) console.error("Error:", error);
+        // Cambiamos a la tabla 'equipos' que es donde veo tus datos en la imagen
+        const { data, error } = await supabase
+          .from('equipos') 
+          .select('nombre, puntos_totales')
+          .order('puntos_totales', { ascending: false });
+
+        if (error) console.error("Error:", error.message);
         else setTabla(data || []);
       } catch (e) {
         console.error("Error de conexión:", e);
@@ -27,31 +32,29 @@ export default function TablaPosiciones() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-blue-600 text-white">
-                <th className="p-3 rounded-tl-lg">Equipo</th>
-                <th className="p-3 text-center">PJ</th>
-                <th className="p-3 text-center">PG</th>
-                <th className="p-3 text-center font-bold text-yellow-300">PTS</th>
+                <th className="p-4 rounded-tl-lg">Equipo</th>
+                <th className="p-4 text-center font-bold text-yellow-300">PUNTOS</th>
               </tr>
             </thead>
             <tbody>
               {tabla.map((fila: any, i: number) => (
-                <tr key={i} className="border-b hover:bg-gray-50 transition-colors">
-                  {/* Aquí está el truco: intenta buscar 'nombre' o 'equipo' */}
-                  <td className="p-3 font-semibold text-gray-700">
-                    {fila.nombre || fila.equipo || 'Sin nombre'}
+                <tr key={i} className="border-b hover:bg-gray-50">
+                  <td className="p-4 font-semibold text-gray-700">
+                    {fila.nombre}
                   </td>
-                  <td className="p-3 text-center text-gray-600">{fila.pj || 0}</td>
-                  <td className="p-3 text-center text-gray-600">{fila.pg || 0}</td>
-                  <td className="p-3 text-center font-bold text-blue-600 text-lg">
-                    {fila.puntos || fila.pts || 0}
+                  <td className="p-4 text-center font-bold text-blue-600 text-xl">
+                    {fila.puntos_totales || 0}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {tabla.length === 0 && (
-            <p className="text-center mt-6 text-gray-400 italic">Cargando datos del torneo...</p>
+            <p className="text-center mt-6 text-gray-400 italic">Cargando datos de Supabase...</p>
           )}
+        </div>
+        <div className="mt-8 text-center">
+            <a href="/" className="text-blue-500 hover:underline">← Volver al Inicio</a>
         </div>
       </div>
     </div>
