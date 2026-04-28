@@ -1,33 +1,143 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { supabase } from '../../src/supabase';
-import Link from 'next/link';
+"use client";
 
-export default function RegistrarPartido() {
-  // Solución al error: Definimos el estado como any[] para que acepte los datos
-  const [equipos, setEquipos] = useState<any[]>([]);
-  const [local, setLocal] = useState('');
-  const [visitante, setVisitante] = useState('');
-  const [golesLocal, setGolesLocal] = useState(0);
-  const [golesVisitante, setGolesVisitante] = useState(0);
-  const [cargando, setCargando] = useState(false);
+import { useState, useEffect } from "react";
+import { supabase } from "@/src/supabaseClient.mjs";
+
+interface Tournament {
+  id: string;
+  name: string;
+}
+
+interface Match {
+  id: string;
+  home_team_id: string;
+  away_team_id: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  jornada: number;
+}
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+export default function PartidosPage() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTournament, setSelectedTournament] = useState("");
+  const [homeScore, setHomeScore] = useState<{ [key: string]: string }>({});
+  const [awayScore, setAwayScore] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    const obtenerEquipos = async () => {
-      const { data } = await supabase.from('equipos').select('*');
-      setEquipos(data || []); // Ahora TypeScript no marcará error aquí
-    };
-    obtenerEquipos();
+    fetchTournaments();
   }, []);
 
-  const subirResultado = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!local || !visitante || local === visitante) {
-        return alert("Selecciona dos equipos diferentes");
+  useEffect(() => {
+    if (selectedTournament) {
+      fetchMatches();
+      fetchTeams();
     }
-    setCargando(true);
+  }, [selectedTournament]);
 
-    try {
+  const fetchTournaments = async () => {
+    const { data } = await supabase.from("tournaments").select("id, name");
+    setTournaments(data || []);
+  };
+
+  const fetchMatches = async () => {
+    if (!selectedTournament) return;
+    const { data } = await supabase.from("matches").select("*").eq("tournament_id", selectedTournament);
+    setMatches(data || []);
+  };
+
+  const fetchTeams = async () => {
+    if (!selectedTournament) return;
+    const { data } = await supabase.from("teams").select("id, name").eq("tournament_id", selectedTournament);
+    setTeams(data || []);
+  };
+
+  const getTeamName = (id: string) => teams.find((t) => t.id === id)?.name || "Equipo";
+
+  const updateScore = async (matchId: string) => {
+    const home = parseInt(homeScore[matchId] || "0");
+    const away = parseInt(awayScore[matchId] || "0");
+
+    const { error } = await supabase
+      .from("matches")
+      .update({ home_score: home, away_score: away, status: "jugado" })
+      .eq("id", matchId);
+
+    if (!error) {
+      fetchMatches();
+      alert("✅ Resultado actualizado");
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-50 py-16 px-4">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold mb-8">⚽ Ingresar Resultados</h1>
+
+        <select
+          value={selectedTournament}
+          onChange={(e) => setSelectedTournament(e.target.value)}
+          className="w-full border border-slate-300 px-4 py-2 rounded-lg mb-8"
+        >
+          <option value="">Selecciona un torneo</option>
+          {tournaments.map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
+          ))}
+        </select>
+
+        <div className="space-y-4">
+          {matches.length === 0 ? (
+            <p className="text-slate-600">No hay partidos. Genera un fixture primero.</p>
+          ) : (
+            matches.map((match) => (
+              <div key={match.id} className="bg-white p-6 rounded-lg shadow-lg">
+                <p className="text-sm text-slate-600 mb-2">Jornada {match.jornada}</p>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex-1">
+                    <p className="font-bold">{getTeamName(match.home_team_id)}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      value={homeScore[match.id] || match.home_score || ""}
+                      onChange={(e) => setHomeScore({ ...homeScore, [match.id]: e.target.value })}
+                      placeholder="0"
+                      className="w-16 border px-2 py-1 rounded text-center"
+                    />
+                    <span className="px-2 py-1">-</span>
+                    <input
+                      type="number"
+                      value={awayScore[match.id] || match.away_score || ""}
+                      onChange={(e) => setAwayScore({ ...awayScore, [match.id]: e.target.value })}
+                      placeholder="0"
+                      className="w-16 border px-2 py-1 rounded text-center"
+                    />
+                  </div>
+                  <div className="flex-1 text-right">
+                    <p className="font-bold">{getTeamName(match.away_team_id)}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => updateScore(match.id)}
+                  className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+                >
+                  💾 Guardar Resultado
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
       // 1. Registrar el partido
       await supabase.from('partidos').insert([
         { 
