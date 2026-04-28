@@ -1,65 +1,65 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/src/supabaseClient.mjs";
+import { supabase } from "@/src/supabase.js";
 
-interface Tournament {
+interface Torneo {
   id: string;
-  name: string;
+  nombre: string;
 }
 
-interface Team {
+interface Equipo {
   id: string;
-  name: string;
+  nombre: string;
 }
 
 export default function FixturePage() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [selectedTournament, setSelectedTournament] = useState("");
+  const [torneos, setTorneos] = useState<Torneo[]>([]);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [selectedTorneo, setSelectedTorneo] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetchTournaments();
+    fetchTorneos();
   }, []);
 
   useEffect(() => {
-    if (selectedTournament) fetchTeams();
-  }, [selectedTournament]);
+    if (selectedTorneo) fetchEquipos();
+  }, [selectedTorneo]);
 
-  const fetchTournaments = async () => {
-    const { data } = await supabase.from("tournaments").select("id, name");
-    setTournaments(data || []);
+  const fetchTorneos = async () => {
+    const { data } = await supabase.from("torneos").select("id, nombre");
+    setTorneos(data || []);
   };
 
-  const fetchTeams = async () => {
-    if (!selectedTournament) return;
-    const { data } = await supabase.from("teams").select("id, name").eq("tournament_id", selectedTournament);
-    setTeams(data || []);
+  const fetchEquipos = async () => {
+    if (!selectedTorneo) return;
+    const { data } = await supabase.from("equipos").select("id, nombre").eq("torneo_id", selectedTorneo);
+    setEquipos(data || []);
   };
 
   const generateFixture = async () => {
-    if (!selectedTournament || teams.length < 2) {
+    if (!selectedTorneo || equipos.length < 2) {
       setMessage("Necesitas al menos 2 equipos");
       return;
     }
 
     setLoading(true);
     const matches = [];
-    for (let i = 0; i < teams.length; i += 2) {
-      if (i + 1 < teams.length) {
+    for (let i = 0; i < equipos.length; i += 2) {
+      if (i + 1 < equipos.length) {
         matches.push({
-          tournament_id: selectedTournament,
-          home_team_id: teams[i].id,
-          away_team_id: teams[i + 1].id,
+          torneo_id: selectedTorneo,
+          local_id: equipos[i].id,
+          visitante_id: equipos[i + 1].id,
           jornada: Math.floor(i / 2) + 1,
-          status: "pendiente",
+          estado: "pendiente",
         });
       }
     }
 
-    const { error } = await supabase.from("matches").insert(matches);
+    const { error } = await supabase.from("partidos").insert(matches);
     setLoading(false);
 
     if (error) {
@@ -78,22 +78,22 @@ export default function FixturePage() {
           <h2 className="text-2xl font-bold mb-4">Generar Calendario</h2>
 
           <select
-            value={selectedTournament}
-            onChange={(e) => setSelectedTournament(e.target.value)}
+            value={selectedTorneo}
+            onChange={(e) => setSelectedTorneo(e.target.value)}
             className="w-full border border-slate-300 px-4 py-2 rounded-lg mb-4"
           >
             <option value="">Selecciona un torneo</option>
-            {tournaments.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
+            {torneos.map((t) => (
+              <option key={t.id} value={t.id}>{t.nombre}</option>
             ))}
           </select>
 
-          {selectedTournament && (
+          {selectedTorneo && (
             <div>
-              <h3 className="font-bold mb-2">Equipos: {teams.length}</h3>
+              <h3 className="font-bold mb-2">Equipos: {equipos.length}</h3>
               <ul className="mb-4">
-                {teams.map((t) => (
-                  <li key={t.id} className="text-slate-600">• {t.name}</li>
+                {equipos.map((t) => (
+                  <li key={t.id} className="text-slate-600">• {t.nombre}</li>
                 ))}
               </ul>
             </div>

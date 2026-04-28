@@ -1,66 +1,66 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/src/supabaseClient.mjs";
+import { supabase } from "@/src/supabase.js";
 import Link from "next/link";
 
-interface Team {
+interface Equipo {
   id: string;
-  name: string;
-  tournament_id: string;
-  created_at: string;
+  nombre: string;
+  torneo_id: string;
+  created_at?: string;
 }
 
-interface Tournament {
+interface Torneo {
   id: string;
-  name: string;
+  nombre: string;
 }
 
 export default function EquiposPage() {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [name, setName] = useState("");
-  const [tournamentId, setTournamentId] = useState("");
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [torneos, setTorneos] = useState<Torneo[]>([]);
+  const [nombre, setNombre] = useState("");
+  const [torneoId, setTorneoId] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    fetchTournaments();
-    fetchTeams();
+    fetchTorneos();
+    fetchEquipos();
   }, []);
 
-  const fetchTournaments = async () => {
-    const { data } = await supabase.from("tournaments").select("id, name");
-    setTournaments(data || []);
+  const fetchTorneos = async () => {
+    const { data } = await supabase.from("torneos").select("id, nombre");
+    setTorneos(data || []);
   };
 
-  const fetchTeams = async () => {
-    const { data } = await supabase.from("teams").select("*").order("created_at", { ascending: false });
-    setTeams(data || []);
+  const fetchEquipos = async () => {
+    const { data } = await supabase.from("equipos").select("*").order("created_at", { ascending: false });
+    setEquipos(data || []);
   };
 
-  const addTeam = async (e: React.FormEvent) => {
+  const addEquipo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tournamentId) {
+    if (!torneoId) {
       setMessage("Selecciona un torneo");
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("teams").insert({ name, tournament_id: tournamentId });
+    const { error } = await supabase.from("equipos").insert({ nombre, torneo_id: torneoId });
     setLoading(false);
 
     if (error) {
       setMessage(`Error: ${error.message}`);
     } else {
       setMessage("Equipo registrado");
-      setName("");
-      fetchTeams();
+      setNombre("");
+      fetchEquipos();
     }
   };
 
-  const deleteTeam = async (id: string) => {
-    await supabase.from("teams").delete().eq("id", id);
-    fetchTeams();
+  const deleteEquipo = async (id: string) => {
+    await supabase.from("equipos").delete().eq("id", id);
+    fetchEquipos();
   };
 
   return (
@@ -70,21 +70,21 @@ export default function EquiposPage() {
 
         <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
           <h2 className="text-2xl font-bold mb-4">Registrar Nuevo Equipo</h2>
-          <form onSubmit={addTeam} className="space-y-4">
+          <form onSubmit={addEquipo} className="space-y-4">
             <select
-              value={tournamentId}
-              onChange={(e) => setTournamentId(e.target.value)}
+              value={torneoId}
+              onChange={(e) => setTorneoId(e.target.value)}
               className="w-full border border-slate-300 px-4 py-2 rounded-lg"
             >
               <option value="">Selecciona un torneo</option>
-              {tournaments.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+              {torneos.map((t) => (
+                <option key={t.id} value={t.id}>{t.nombre}</option>
               ))}
             </select>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               placeholder="Nombre del equipo"
               required
               className="w-full border border-slate-300 px-4 py-2 rounded-lg"
@@ -102,17 +102,19 @@ export default function EquiposPage() {
 
         <div className="grid gap-4">
           <h2 className="text-2xl font-bold">Equipos Registrados</h2>
-          {teams.length === 0 ? (
+          {equipos.length === 0 ? (
             <p className="text-slate-600">No hay equipos registrados.</p>
           ) : (
-            teams.map((team) => (
-              <div key={team.id} className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-600 flex justify-between items-center">
+            equipos.map((equipo) => (
+              <div key={equipo.id} className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-600 flex justify-between items-center">
                 <div>
-                  <h3 className="text-xl font-bold">{team.name}</h3>
-                  <p className="text-slate-600 text-sm">Creado: {new Date(team.created_at).toLocaleDateString()}</p>
+                  <h3 className="text-xl font-bold">{equipo.nombre}</h3>
+                  {equipo.created_at ? (
+                    <p className="text-slate-600 text-sm">Creado: {new Date(equipo.created_at).toLocaleDateString()}</p>
+                  ) : null}
                 </div>
                 <button
-                  onClick={() => deleteTeam(team.id)}
+                  onClick={() => deleteEquipo(equipo.id)}
                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
                 >
                   Eliminar
